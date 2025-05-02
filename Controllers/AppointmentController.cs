@@ -1,7 +1,9 @@
 ﻿using medical.Data;
 using medical.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace medical.Controllers
 {
@@ -79,6 +81,49 @@ namespace medical.Controllers
                 return StatusCode(500, new { Message = "Server error", Error = ex.Message });
             }
         }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetUserAppointments()
+        {
+            try
+            {
+                // Extract user ID from JWT token
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+                {
+                    return Unauthorized(new { Message = "Invalid user ID in token" });
+                }
+
+                // Fetch appointments where user is either Patient or Doctor
+                var appointments = await _context.Appointments
+                    .Where(r => r.PatientId == userId || r.DoctorId == userId)
+                    .Include(r => r.Patient) // Include Patient details
+                    .Include(r => r.Doctor)  // Include Doctor details
+                    .Select(r => new
+                    {
+                        r.Id,
+                        Patient = new { r.Patient.Id, r.Patient.Name, r.Patient.Email },
+                        Doctor = new { r.Doctor.Id, r.Doctor.Name, r.Doctor.Email },
+                        r.Date,
+                        r.Time,
+                        r.Status,
+                        r.CreatedAt
+                    })
+                    .ToListAsync();
+
+                return Ok(appointments);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Server error", Error = ex.Message });
+            }
+        }
+
+
+
+
+
     }
 
     public class RendezVousCreateDto
