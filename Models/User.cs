@@ -31,18 +31,18 @@ namespace medical.Models
         public string Role { get; set; } 
 
         [StringLength(3)] 
-        public string GroupeSanguin { get; set; } = "";
+        public string? GroupeSanguin { get; set; } = "";
 
         [StringLength(100)]
-        public string Specialite { get; set; } = "";
+        public string? Specialite { get; set; } = "";
 
         [Column(TypeName = "decimal(18,2)")] 
         public decimal Salary { get; set; } = 0m; 
 
-        public string Allergies { get; set; } = "";
+        public string? Allergies { get; set; } = "";
 
         [StringLength(50)] 
-        public string Code { get; set; } = "";
+        public string? Code { get; set; } = "";
 
         [Column(TypeName = "timestamp with time zone")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
