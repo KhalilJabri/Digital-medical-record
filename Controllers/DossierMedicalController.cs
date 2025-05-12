@@ -77,26 +77,31 @@ namespace medical.Controllers
 
         // PUT: api/DossierMedical/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutDossier(int id, DossierMedical dossier)
+        public async Task<IActionResult> PutDossier(int id, DossierMedicalDto dto)
         {
-            if (id != dossier.Id)
+            var dossier = await _context.DossiersMedical.FindAsync(id);
+            if (dossier == null)
             {
                 return BadRequest();
             }
 
             // Validate Doctor and Patient roles
-            var doctor = await _context.Users.FindAsync(dossier.DoctorId);
-            var patient = await _context.Users.FindAsync(dossier.PatientId);
+            var doctor = await _context.Users.FindAsync(dto.DoctorId);
+            var patient = await _context.Users.FindAsync(dto.PatientId);
 
-            if (doctor == null || doctor.Role != "Doctor")
+            if (doctor == null || doctor.Role != "doctor")
             {
                 return BadRequest("Invalid or non-existent Doctor.");
             }
 
-            if (patient == null || patient.Role != "Patient")
+            if (patient == null || patient.Role != "patient")
             {
                 return BadRequest("Invalid or non-existent Patient.");
             }
+
+            dossier.Name = dto.Name;
+            dossier.DoctorId = dto.DoctorId;
+            dossier.PatientId = dto.PatientId;
 
             _context.Entry(dossier).State = EntityState.Modified;
 
