@@ -9,6 +9,7 @@ namespace medical.Data
 
         public DbSet<User> Users { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<DossierMedical> DossiersMedical { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

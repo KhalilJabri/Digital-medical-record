@@ -34,8 +34,13 @@ namespace medical.Controllers
         {
             try
             {
-                var token = await _authService.Login(request.Email, request.Password);
-                return Ok(new { Token = token });
+                var (token, user) = await _authService.Login(request.Email, request.Password);
+                return Ok(new
+                {
+                    Token = token,
+                    Email = ((dynamic)user).Email,
+                    Role = ((dynamic)user).Role
+                });
             }
             catch (Exception ex)
             {

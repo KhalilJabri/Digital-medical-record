@@ -88,7 +88,7 @@ namespace medical.Services
             }
         }
 
-        public async Task<string> Login(string email, string password)
+        public async Task<(string Token, object User)> Login(string email, string password)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.Password))
@@ -96,7 +96,16 @@ namespace medical.Services
                 throw new Exception("Invalid email or password.");
             }
 
-            return GenerateJwtToken(user);
+            var token = GenerateJwtToken(user);
+
+            var userResponse = new
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Role = user.Role
+            };
+
+            return (token, userResponse);
         }
 
         private string GenerateJwtToken(User user)
