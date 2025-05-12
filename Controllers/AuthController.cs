@@ -47,6 +47,9 @@ namespace medical.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+
+
     }
 
     public class LoginRequest
