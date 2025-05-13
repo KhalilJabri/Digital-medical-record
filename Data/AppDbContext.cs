@@ -10,6 +10,7 @@ namespace medical.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<DossierMedical> DossiersMedical { get; set; }
+        public DbSet<Analyse> Analyses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,6 +37,12 @@ namespace medical.Data
                 .WithMany() // No inverse navigation in User
                 .HasForeignKey(r => r.DoctorId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Analyse>()
+            .HasOne(a => a.DossierMedical)
+            .WithMany()
+            .HasForeignKey(a => a.DossierMedicalId)
+            .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
