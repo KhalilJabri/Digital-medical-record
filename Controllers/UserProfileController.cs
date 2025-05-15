@@ -61,84 +61,84 @@ namespace MedicalApp.Controllers
             return Ok(user);
         }
 
-        // PATCH: api/UserProfile
-        [HttpPatch]
-        public async Task<IActionResult> PatchProfile([FromBody] JsonPatchDocument<User> patchDoc)
+        [HttpGet("doctors")]
+        public async Task<IActionResult> GetDoctors()
         {
-            if (patchDoc == null)
-            {
-                return BadRequest("Patch document is null.");
-            }
+            var doctors = await _context.Users
+                .Where(d => d.Role == "doctor")
+                .Select(d => new {
+                    d.Id,
+                    d.Name,
+                    d.Email
+                })
+                .ToListAsync();
 
-            // Try to get user ID from NameIdentifier claim
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            int? userId = null;
-            if (!string.IsNullOrEmpty(userIdClaim) && int.TryParse(userIdClaim, out int parsedId))
-            {
-                userId = parsedId;
-            }
-            else
-            {
-                // Fallback to email claim
-                var emailClaim = User.FindFirst(ClaimTypes.Email)?.Value;
-                if (string.IsNullOrEmpty(emailClaim))
-                {
-                    return Unauthorized("Invalid user token.");
-                }
+            return Ok(doctors);
+        }
 
-                var userByEmail = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Email == emailClaim);
+        [HttpGet("patients")]
+        public async Task<IActionResult> GetPatients()
+        {
+            var doctors = await _context.Users
+                .Where(d => d.Role == "patient")
+                .Select(d => new {
+                    d.Id,
+                    d.Name,
+                    d.Email
+                })
+                .ToListAsync();
 
-                if (userByEmail == null)
-                {
-                    return NotFound("User not found.");
-                }
+            return Ok(doctors);
+        }
 
-                userId = userByEmail.Id;
-            }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Id == userId);
-
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            // Validate the patch document
-            foreach (var operation in patchDoc.Operations)
-            {
-                if (operation.path.ToLower().Contains("id") ||
-                    operation.path.ToLower().Contains("role") ||
-                    operation.path.ToLower().Contains("createdat") ||
-                    operation.path.ToLower().Contains("password"))
-                {
-                    return BadRequest($"Updating {operation.path} is not allowed.");
-                }
-            }
-
-            // Apply the patch with custom error handling
-            patchDoc.ApplyTo(user, error =>
-            {
-                ModelState.AddModelError(error.AffectedObject?.ToString() ?? "PatchError", error.ErrorMessage);
-            });
-
+        [HttpPut]
+        public async Task<IActionResult> UpdateProfile([FromBody] User updatedUser)
+        {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // Validate the updated entity
+            // Get the logged-in user's ID from claims
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("Invalid user token.");
+            }
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            // Update fields manually (exclude Password)
+            user.Name = updatedUser.Name;
+            user.DateNaiss = updatedUser.DateNaiss;
+            user.Genre = updatedUser.Genre;
+            user.Role = updatedUser.Role;
+            user.GroupeSanguin = updatedUser.GroupeSanguin;
+            user.Specialite = updatedUser.Specialite;
+            user.Salary = updatedUser.Salary;
+            user.Allergies = updatedUser.Allergies;
+            user.Code = updatedUser.Code;
+
+            // Do not update: user.Password or user.Email (optional - can be blocked too)
+
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateException ex)
+            catch (DbUpdateConcurrencyException)
             {
-                return BadRequest($"Error updating profile: {ex.InnerException?.Message ?? ex.Message}");
+                return StatusCode(500, "Failed to update user profile.");
             }
 
-            return NoContent();
+            user.Password = null; // Never return password
+            return Ok(user);
         }
+
+
     }
 }
